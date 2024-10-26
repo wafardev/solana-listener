@@ -28,22 +28,31 @@ process.on("exit", (code) => {
 });
 
 function createProvider() {
-  let message = {};
-  const publicKey = new PublicKey(TARGET_ADDRESS);
+  const message = {};
 
-  connection.onLogs(publicKey, async (logs) => {
-    console.log("New transaction involving target address detected:");
-    try {
-      if (
-        (await handleTransactionLogs(logs, connection, message)) &&
-        (await getTokenInfo(message.tokenAddress, message))
-      ) {
-        console.log("Transaction details processed successfully");
-        await buildAndSendMessage(message, "solana");
+  TARGET_ADDRESSES.forEach((address) => {
+    const publicKey = new PublicKey(address);
+
+    connection.onLogs(publicKey, async (logs) => {
+      console.log(
+        `New transaction involving target address ${address} detected:`
+      );
+
+      try {
+        // Ensure message is reset for each log
+        const currentMessage = { ...message };
+
+        if (
+          (await handleTransactionLogs(logs, connection, currentMessage)) &&
+          (await getTokenInfo(currentMessage.tokenAddress, currentMessage))
+        ) {
+          console.log("Transaction details processed successfully");
+          await buildAndSendMessage(currentMessage, "solana");
+        }
+      } catch (error) {
+        console.error("Error handling transaction logs:", error);
       }
-    } catch (error) {
-      console.error("Error handling transaction logs:", error);
-    }
+    });
   });
 
   console.log("Solana Listener started...");
@@ -54,7 +63,10 @@ async function main() {
 }
 
 //const TARGET_ADDRESS = "DoQMWf3Sm1uWeHSL3Heou4Uc1LwgmscAkhFvyZbuuHeH";
-const TARGET_ADDRESS = "HLv6yCEpgjQV9PcKsvJpem8ESyULTyh9HjHn9CtqSek1";
+const TARGET_ADDRESSES = [
+  "HLv6yCEpgjQV9PcKsvJpem8ESyULTyh9HjHn9CtqSek1",
+  "8MaVa9kdt3NW4Q5HyNAm1X5LbR8PQRVDc1W8NMVK88D5",
+];
 
 main();
 

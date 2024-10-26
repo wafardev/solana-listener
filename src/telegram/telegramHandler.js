@@ -22,7 +22,7 @@ async function sendMessage(message, retries = 3, retryDelay = 1000) {
         parse_mode: "HTML",
         disable_web_page_preview: true,
       });
-      console.log("Message sent successfully:", response.data);
+      //console.log("Message sent successfully:", response.data);
       return response.data;
     } catch (error) {
       const isConnectionError = error.code === "ECONNRESET";
