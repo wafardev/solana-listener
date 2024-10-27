@@ -1,46 +1,63 @@
 const { sendMessage } = require("./telegramHandler");
+const getDexInfo = require("../misc/apiCalls");
 
-async function buildAndSendMessage(messageObject, chain) {
-  const SOL_PRICE = 170;
-  const formatCurrency = (amount) => amount.toLocaleString("en-US");
+async function buildAndSendMessage(messageObject, chain, platform) {
+  const SOL_ADDRESS = "0xD31a59c85aE9D8edEFeC411D448f90841571b89c";
+  const SOL_PRICE = await getDexInfo(SOL_ADDRESS, {}, true);
+  const formatCurrency = (amount) => {
+    if (amount === 0 || !amount) return "0";
+    return amount.toLocaleString("en-US");
+  };
 
   let explorer;
   if (chain === "solana") {
     explorer = "solscan.io";
   }
 
-  if (messageObject.type === "Sell") {
-    messageObject.raydium = `<a href="https://raydium.io/swap/?inputMint=${messageObject.tokenAddress}&outputMint=sol">Raydium</a>`;
-  } else {
-    messageObject.raydium = `<a href="https://raydium.io/swap/?inputMint=sol&outputMint=${messageObject.tokenAddress}">Raydium</a>`;
-  }
-
   messageObject.photon = `<a href="https://photon-sol.tinyastro.io/en/lp/${messageObject.pairAddress}">Photon</a>`;
   messageObject.chart = `<a href="https://dexscreener.com/${chain}/${messageObject.tokenAddress}">Chart</a>`;
   messageObject.tx = `<a href="https://${explorer}/tx/${messageObject.signature}">Hash</a>`;
   messageObject.token = `<b>🪙 Token:</b> <i>${messageObject.name} (${messageObject.symbol})</i>`;
-  messageObject.tokenAmount = `🔄 <b>Amount:</b> <i>${
+  messageObject.tokenAmount = `🔄 <b>Amount:</b> <i>${formatCurrency(
     messageObject.tokenAmount
-  } ${messageObject.symbol}</i> ($${formatCurrency(
+  )} ${messageObject.symbol}</i> ($${formatCurrency(
     messageObject.solAmount * SOL_PRICE
   )})`;
-  messageObject.tokenAddress = `🏷️ <b>Token Address</b>: <code>${messageObject.tokenAddress}</code>`;
   messageObject.wallet = `<b>💸 Wallet Address:</b> <code>${messageObject.signer}</code>`;
-  messageObject.value = `💰 <b>Value Transacted (SOL):</b> <i>${messageObject.solAmount} SOL</i>`;
-  messageObject.type = `📊 <b>Transaction Type:</b> <i>${messageObject.type}</i>`;
+  messageObject.value = `💰 <b>Value Transacted (SOL):</b> <i>${formatCurrency(
+    messageObject.solAmount
+  )} SOL</i>`;
+  messageObject.type = `📊 <b>Transaction Type:</b> <i>${messageObject.type} (${messageObject.platform})</i>`;
   messageObject.price = `📈 <b>Price per ${messageObject.symbol}:</b> <i>$${messageObject.priceUsd}</i>`;
 
-  messageObject.socialLinks = messageObject.socialLinks
-    ? messageObject.socialLinks
-        .map((socialObject) => {
-          if (socialObject.type === "telegram")
-            return `<a href="${socialObject.url}">📬 Telegram</a>`;
-          if (socialObject.type === "twitter")
-            return `<a href="${socialObject.url}">🐦 Twitter</a>`;
-          return `<a href="${socialObject.url}">🌐 Website</a>`;
-        })
-        .join(" | ")
-    : "🔗 <b>No social links found.</b>";
+  if (platform === "Raydium") {
+    if (messageObject.type === "Sell") {
+      messageObject.buy = `💎 <a href="https://raydium.io/swap/?inputMint=${messageObject.tokenAddress}&outputMint=sol">Raydium</a>`;
+    } else {
+      messageObject.buy = `💎 <a href="https://raydium.io/swap/?inputMint=sol&outputMint=${messageObject.tokenAddress}">Raydium</a>`;
+    }
+  } else if (platform === "PumpFun") {
+    messageObject.buy = `💊 <a href="https://pump.fun/${messageObject.tokenAddress}">PumpFun</a>`;
+    messageObject.chart = `<a href="https://photon-sol.tinyastro.io/en/lp/${messageObject.pairAddress}">Chart</a>`;
+  }
+
+  if (
+    !Array.isArray(messageObject.socialLinks) ||
+    messageObject.socialLinks.length === 0
+  ) {
+    console.log("No social links found.");
+    messageObject.socialLinks = "🔗 <b>No social links found.</b>";
+  } else {
+    messageObject.socialLinks = messageObject.socialLinks
+      .map((socialObject) => {
+        if (socialObject.type === "telegram")
+          return `<a href="${socialObject.url}">📬 Telegram</a>`;
+        if (socialObject.type === "twitter")
+          return `<a href="${socialObject.url}">🐦 Twitter</a>`;
+        return `<a href="${socialObject.url}">🌐 Other</a>`;
+      })
+      .join(" | ");
+  }
 
   const message = `🚨 <b>COPYTRADING ALERT FOR WALLET</b> 🚨
 
@@ -59,7 +76,7 @@ ${messageObject.price}
     messageObject.liquidity
   )}</i> | 🏦 <b>Volume:</b> <i>$${formatCurrency(messageObject.volume)}</i>
 
-⚛️ ${messageObject.photon} | 💎 ${messageObject.raydium} | 📈 ${
+⚛️ ${messageObject.photon} | ${messageObject.buy} | 📈 ${
     messageObject.chart
   } | 🔍 ${messageObject.tx}
 

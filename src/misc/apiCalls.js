@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-async function getTokenInfo(tokenAddress, message) {
+async function getDexInfo(tokenAddress, message, priceFeed) {
   try {
     const response = await axios.get(
       `https://api.dexscreener.com/latest/dex/tokens/${tokenAddress}`
@@ -9,6 +9,10 @@ async function getTokenInfo(tokenAddress, message) {
     const pair = response.data?.pairs?.[0];
     if (!pair) {
       throw new Error("No pairs found for the given token address");
+    }
+
+    if (priceFeed) {
+      return pair.priceUsd;
     }
 
     const {
@@ -45,4 +49,4 @@ async function getTokenInfo(tokenAddress, message) {
   }
 }
 
-module.exports = getTokenInfo;
+module.exports = getDexInfo;

@@ -9,13 +9,19 @@ async function handleTransactionLogs(logs, connection, message) {
     });
 
     if (txDetails) {
-      const isProcessed = await processTransaction(txDetails, message);
-      if (isProcessed) {
+      const platform = await processTransaction(
+        txDetails,
+        undefined,
+        undefined,
+        message,
+        connection
+      );
+      if (platform === "PumpFun" || platform === "Raydium") {
         console.log(
           "Transaction details processed successfully for:",
           logs.signature
         );
-        return true;
+        return platform;
       } else {
         console.log("Transaction processing failed for:", logs.signature);
       }

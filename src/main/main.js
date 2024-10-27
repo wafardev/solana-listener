@@ -6,7 +6,7 @@ const { Connection, clusterApiUrl, PublicKey } = solanaWeb3;
 const handleSlot = require("../handler/handleSlot");
 const handleTransactionLogs = require("../handler/handleLogs");
 const buildAndSendMessage = require("../telegram/messageGenerator");
-const getTokenInfo = require("../misc/apiCalls");
+const getDexInfo = require("../misc/apiCalls");
 
 const SOLANA_RPC_URL =
   process.env.SOLANA_RPC_URL || clusterApiUrl("mainnet-beta");
@@ -27,10 +27,10 @@ process.on("exit", (code) => {
   );
 });
 
-function createProvider() {
+async function createProvider() {
   const message = {};
 
-  TARGET_ADDRESSES.forEach((address) => {
+  for (const address of TARGET_ADDRESSES) {
     const publicKey = new PublicKey(address);
 
     connection.onLogs(publicKey, async (logs) => {
@@ -39,21 +39,37 @@ function createProvider() {
       );
 
       try {
-        // Ensure message is reset for each log
-        const currentMessage = { ...message };
+        const currentMessage = { ...message }; // Ensure message is reset for each log
+        const handledPlatform = await handleTransactionLogs(
+          logs,
+          connection,
+          currentMessage
+        );
+        let infoGathered = false;
 
-        if (
-          (await handleTransactionLogs(logs, connection, currentMessage)) &&
-          (await getTokenInfo(currentMessage.tokenAddress, currentMessage))
-        ) {
+        if (handledPlatform === "Raydium") {
+          infoGathered = await getDexInfo(
+            currentMessage.tokenAddress,
+            currentMessage,
+            false
+          );
+        } else if (handledPlatform === "PumpFun") {
+          // Already handled in handleTx.js
+          infoGathered = true;
+        }
+
+        if (infoGathered) {
           console.log("Transaction details processed successfully");
-          await buildAndSendMessage(currentMessage, "solana");
+          await buildAndSendMessage(currentMessage, "solana", handledPlatform);
         }
       } catch (error) {
-        console.error("Error handling transaction logs:", error);
+        console.error(
+          `Error handling transaction logs for address ${address}:`,
+          error
+        );
       }
     });
-  });
+  }
 
   console.log("Solana Listener started...");
 }
@@ -62,18 +78,17 @@ async function main() {
   createProvider();
 }
 
-//const TARGET_ADDRESS = "DoQMWf3Sm1uWeHSL3Heou4Uc1LwgmscAkhFvyZbuuHeH";
 const TARGET_ADDRESSES = [
   "HLv6yCEpgjQV9PcKsvJpem8ESyULTyh9HjHn9CtqSek1",
   "8MaVa9kdt3NW4Q5HyNAm1X5LbR8PQRVDc1W8NMVK88D5",
 ];
 
-main();
+//main();
 
 // Uncomment below for debugging a specific block manually
 /*
-const debugBlockNumber = 297618646;
-handleSlot(debugBlockNumber, connection, TARGET_ADDRESS)
+const debugBlockNumber = 297888370;
+handleSlot(debugBlockNumber, connection, TARGET_ADDRESSES, true)
   .then(() => console.log(`Finished processing block ${debugBlockNumber}`))
   .catch((error) =>
     console.error(`Error processing block ${debugBlockNumber}:`, error)

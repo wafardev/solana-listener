@@ -10,9 +10,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@metaplex-foundation/js": "^0.20.1",
+    "@solana/spl-token-registry": "^0.2.4574",
     "@solana/web3.js": "^1.95.4",
     "axios": "^1.7.7",
-    "dotenv": "^16.4.5",
-    "fs": "^0.0.1-security"
+    "dotenv": "^16.4.5"
   }
 }

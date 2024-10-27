@@ -1,14 +1,16 @@
 const handleTx = require("./handleTx");
 
 // Processes individual transactions based on tx logs
-async function processTransaction(tx, message, index, targetAddress) {
+async function processTransaction(
+  tx,
+  targetAddress,
+  index,
+  message,
+  connection
+) {
   if (tx.meta?.err) return false; // Skip errored transactions
 
   let platform = "";
-  let solAmount = 0;
-  let tokenAddress = "";
-  let tokenAmount = 0;
-  let boughtBool = false;
 
   const txMessage = tx.transaction.message;
   const signature = tx.transaction.signatures[0];
@@ -18,7 +20,7 @@ async function processTransaction(tx, message, index, targetAddress) {
     ? txMessage.accountKeys[0].toBase58()
     : txMessage.staticAccountKeys[0].toBase58();
 
-  if (targetAddress && signer !== targetAddress) return false; // Skip transactions not involving target address
+  if (targetAddress !== undefined && signer !== targetAddress) return false; // Skip transactions not involving target address
 
   const pumpLogs = [
     "Program log: Instruction: PumpBuy",
@@ -31,48 +33,27 @@ async function processTransaction(tx, message, index, targetAddress) {
 
   let validTransaction = false;
 
-  // Check for Raydium logs
-  if (logs.some((log) => raydiumLogs.includes(log))) {
-    platform = "Raydium";
-    ({
-      solAmount = 0,
-      tokenAddress = "",
-      tokenAmount = 0,
-      boughtBool = false,
-    } = handleTx(tx, signer, platform));
-    validTransaction = true;
-  }
   // Check for PumpFun logs
-  else if (logs.some((log) => pumpLogs.includes(log))) {
-    // TODO: Implement PumpFun transaction handling
-    /*platform = "PumpFun";
-    ({
-      solAmount = 0,
-      tokenAddress = "",
-      tokenAmount = 0,
-      boughtBool = false,
-    } = handleTx(tx, signer, platform));
-    validTransaction = true;*/
-    return false;
+  if (logs.includes(pumpLogs[0]) || logs.includes(pumpLogs[1])) {
+    platform = "PumpFun";
+    validTransaction = handleTx(tx, signer, platform, message, connection);
+  }
+  // Check for Raydium logs
+  else if (logs.some((log) => raydiumLogs.includes(log))) {
+    platform = "Raydium";
+    validTransaction = handleTx(tx, signer, platform, message, connection);
   }
 
   if (validTransaction) {
     message.signature = signature;
     message.signer = signer;
     message.platform = platform;
-    message.solAmount = solAmount;
-    message.tokenAddress = tokenAddress;
-    message.tokenAmount = tokenAmount;
-    message.type = boughtBool ? "Buy" : "Sell";
 
     console.log(`Transaction ${index + 1 || ""}: ${platform}`);
     console.log(`Signature: ${signature}`);
-    console.log(
-      `SOL Amount: ${solAmount}, Token Address: ${tokenAddress}, Token Amount: ${tokenAmount}`
-    );
     console.log("\n\n");
 
-    return true;
+    return message.platform;
   }
 
   return false;
