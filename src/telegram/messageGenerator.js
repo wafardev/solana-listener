@@ -1,9 +1,9 @@
 const { sendMessage } = require("./telegramHandler");
-const getDexInfo = require("../misc/apiCalls");
+const getSolPrice = require("../misc/getSolPrice");
 
 async function buildAndSendMessage(messageObject, chain, platform) {
-  const SOL_ADDRESS = "0xD31a59c85aE9D8edEFeC411D448f90841571b89c";
-  const SOL_PRICE = await getDexInfo(SOL_ADDRESS, {}, true);
+  console.log(messageObject);
+  const SOL_PRICE = await getSolPrice();
   const formatCurrency = (amount) => {
     if (amount === 0 || !amount) return "0";
     return amount.toLocaleString("en-US");

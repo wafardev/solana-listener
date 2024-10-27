@@ -25,6 +25,8 @@ async function processTransaction(
   const pumpLogs = [
     "Program log: Instruction: PumpBuy",
     "Program log: Instruction: PumpSell",
+    "Program log: Instruction: Buy",
+    "Program log: Instruction: Sell",
   ];
   const raydiumLogs = [
     "Program log: Instruction: Transfer",
@@ -33,15 +35,29 @@ async function processTransaction(
 
   let validTransaction = false;
 
+  const isPumpLog = pumpLogs.some((log) => logs.includes(log));
+
   // Check for PumpFun logs
-  if (logs.includes(pumpLogs[0]) || logs.includes(pumpLogs[1])) {
+  if (isPumpLog) {
     platform = "PumpFun";
-    validTransaction = handleTx(tx, signer, platform, message, connection);
+    validTransaction = await handleTx(
+      tx,
+      signer,
+      platform,
+      message,
+      connection
+    );
   }
   // Check for Raydium logs
   else if (logs.some((log) => raydiumLogs.includes(log))) {
     platform = "Raydium";
-    validTransaction = handleTx(tx, signer, platform, message, connection);
+    validTransaction = await handleTx(
+      tx,
+      signer,
+      platform,
+      message,
+      connection
+    );
   }
 
   if (validTransaction) {
@@ -52,6 +68,8 @@ async function processTransaction(
     console.log(`Transaction ${index + 1 || ""}: ${platform}`);
     console.log(`Signature: ${signature}`);
     console.log("\n\n");
+
+    console.log(message);
 
     return message.platform;
   }

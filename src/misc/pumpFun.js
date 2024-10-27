@@ -1,11 +1,13 @@
 const fetchTokenMetadata = require("./rpcCalls");
+const getSolPrice = require("./getSolPrice");
 
 async function getPumpFunData(tx, signer, connection, message) {
   const LAMPORTS_PER_SOL = 1_000_000_000;
   let pumpFunBondingAddress = "";
+  let tokenAddress = "";
   let accountIndex = -1;
   let tokenAmount = 0;
-  let solAmount = 0;
+  let solBalance = 0;
 
   const postTokenBalances = tx.meta?.postTokenBalances || [];
   const postBalances = tx.meta?.postBalances || [];
@@ -13,6 +15,7 @@ async function getPumpFunData(tx, signer, connection, message) {
   for (const postTokenBalance of postTokenBalances) {
     if (postTokenBalance.owner !== signer) {
       pumpFunBondingAddress = postTokenBalance.owner;
+      tokenAddress = postTokenBalance.mint;
       accountIndex = postTokenBalance.accountIndex;
       tokenAmount = postTokenBalance.uiTokenAmount.uiAmount || 0;
       break;
@@ -21,37 +24,29 @@ async function getPumpFunData(tx, signer, connection, message) {
 
   for (const postBalance of postBalances) {
     if (postBalance.accountIndex === accountIndex) {
-      solAmount = Math.abs(postBalance) / LAMPORTS_PER_SOL;
+      solBalance = postBalance / LAMPORTS_PER_SOL;
       break;
     }
   }
 
-  // uncompleted
-  const tokenMetadata = await fetchTokenMetadata(
-    connection,
-    pumpFunBondingAddress
-  );
-  console.log(tokenMetadata);
+  const tokenMetadata = await fetchTokenMetadata(connection, tokenAddress);
+
+  const solPrice = await getSolPrice();
+
+  const usdPrice = (solBalance / tokenAmount) * solPrice;
+  const marketCap = LAMPORTS_PER_SOL * usdPrice;
+  const liquidity = solBalance * solPrice * 2;
 
   message.pairAddress = pumpFunBondingAddress;
   message.volume = null;
-  message.liquidity = null;
-  message.marketcap = null;
+  message.liquidity = liquidity;
+  message.marketcap = marketCap;
   message.socialLinks = null;
-  message.symbol = null;
-  message.name = null;
-  message.priceUsd = null;
+  message.symbol = tokenMetadata.tokenSymbol;
+  message.name = tokenMetadata.tokenName;
+  message.priceUsd = usdPrice;
 
-  /*Object.assign(message, {
-    volume,
-    liquidity,
-    marketcap,
-    socialLinks,
-    pairAddress,
-    symbol,
-    name,
-    priceUsd,
-  });*/
+  console.log(message);
 }
 
 module.exports = getPumpFunData;

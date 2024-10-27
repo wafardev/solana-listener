@@ -1,6 +1,6 @@
 const getPumpFunData = require("../misc/pumpFun");
 
-function handleTx(tx, signer, platform, message, connection) {
+async function handleTx(tx, signer, platform, message, connection) {
   try {
     const LAMPORTS_PER_SOL = 1_000_000_000;
 
@@ -42,11 +42,9 @@ function handleTx(tx, signer, platform, message, connection) {
         break;
       }
     }
-
     if (platform === "PumpFun") {
-      getPumpFunData(tx, signer, message);
+      await getPumpFunData(tx, signer, connection, message);
     }
-
     console.log(
       `${
         boughtBool ? "Buy" : "Sell"
