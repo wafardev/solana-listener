@@ -81,15 +81,15 @@ async function main() {
 const TARGET_ADDRESSES = [
   "HLv6yCEpgjQV9PcKsvJpem8ESyULTyh9HjHn9CtqSek1",
   "8MaVa9kdt3NW4Q5HyNAm1X5LbR8PQRVDc1W8NMVK88D5",
-  "DQHHpjr7ukrg5F9ugwP4P9U7Xzjti45JE1QcwhpMz8rQ",
 ];
 
-//main();
+main();
 
 // Uncomment below for debugging a specific block manually
-const debugBlockNumber = 297888370;
+/*const debugBlockNumber = 297888370;
 handleSlot(debugBlockNumber, connection, TARGET_ADDRESSES, true)
   .then(() => console.log(`Finished processing block ${debugBlockNumber}`))
   .catch((error) =>
     console.error(`Error processing block ${debugBlockNumber}:`, error)
   );
+*/
