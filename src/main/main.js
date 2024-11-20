@@ -59,6 +59,12 @@ async function createProvider() {
         }
 
         if (infoGathered) {
+          if (message.signer !== publicKey.toString()) {
+            console.log(
+              `Signer address ${message.signer} does not match target address ${address}. Skipping...`
+            );
+            return;
+          }
           console.log("Transaction details processed successfully");
           await buildAndSendMessage(currentMessage, "solana", handledPlatform);
         }
@@ -86,10 +92,9 @@ const TARGET_ADDRESSES = [
 main();
 
 // Uncomment below for debugging a specific block manually
-/*const debugBlockNumber = 297888370;
+/*const debugBlockNumber = 302519910;
 handleSlot(debugBlockNumber, connection, TARGET_ADDRESSES, true)
   .then(() => console.log(`Finished processing block ${debugBlockNumber}`))
   .catch((error) =>
     console.error(`Error processing block ${debugBlockNumber}:`, error)
-  );
-*/
+  );*/

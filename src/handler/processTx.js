@@ -20,6 +20,8 @@ async function processTransaction(
     ? txMessage.accountKeys[0].toBase58()
     : txMessage.staticAccountKeys[0].toBase58();
 
+  console.log(`Signer: ${signer}`);
+
   if (targetAddress !== undefined && signer !== targetAddress) return false; // Skip transactions not involving target address
 
   const pumpLogs = [
