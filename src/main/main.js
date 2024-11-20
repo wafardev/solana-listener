@@ -59,9 +59,9 @@ async function createProvider() {
         }
 
         if (infoGathered) {
-          if (message.signer !== publicKey.toString()) {
+          if (currentMessage.signer !== publicKey.toString()) {
             console.log(
-              `Signer address ${message.signer} does not match target address ${address}. Skipping...`
+              `Signer address ${currentMessage.signer} does not match target address ${address}. Skipping...`
             );
             return;
           }
@@ -84,10 +84,7 @@ async function main() {
   createProvider();
 }
 
-const TARGET_ADDRESSES = [
-  "HLv6yCEpgjQV9PcKsvJpem8ESyULTyh9HjHn9CtqSek1",
-  "8MaVa9kdt3NW4Q5HyNAm1X5LbR8PQRVDc1W8NMVK88D5",
-];
+const TARGET_ADDRESSES = ["5QucYz87axSVkKmemzBcUr71qRguYN4hGKBNZvFUa3cz"];
 
 main();
 
