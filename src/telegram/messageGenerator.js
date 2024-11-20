@@ -85,6 +85,7 @@ ${messageObject.socialLinks}`;
   //console.log(message);
   try {
     console.log("Sending message...");
+    console.log(message);
     await sendMessage(message);
     console.log("Message sent successfully.");
   } catch (error) {
